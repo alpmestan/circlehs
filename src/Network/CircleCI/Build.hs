@@ -8,6 +8,7 @@ API calls for triggering and querying builds.
 -}
 
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE MultiWayIf #-}
@@ -42,6 +43,7 @@ import           Data.Aeson.Types
 import qualified Data.Proxy                     as P
 import           Data.Text                      ( Text )
 import           Data.HashMap.Strict            ( HashMap )
+import           GHC.Generics                   ( Generic )
 
 import           Servant.API
 import           Servant.Client
@@ -147,6 +149,8 @@ data BuildInfo = BuildInfo {
     , lifecycle   :: BuildLifecycle
     , number      :: BuildNumber
     , commit      :: Text
+    , steps       :: [BuildStep]
+    , status      :: Text
     } deriving (Eq, Show)
 
 -- How we create BuildInfo from JSON.
@@ -156,6 +160,8 @@ instance FromJSON BuildInfo where
         <*> (o .: "lifecycle" >>= toBuildLifecycle)
         <*>  o .: "build_num"
         <*>  o .: "vcs_revision"
+        <*> o .: "steps"
+        <*> o .: "status"
     parseJSON _ = mzero
 
 toBuildOutcome :: Text -> Parser BuildOutcome
@@ -193,6 +199,32 @@ data BuildLifecycle = BuildQueued
                     | BuildRunning
                     | BuildFinished
                     deriving (Eq, Show)
+
+data BuildStep = BuildStep
+  { stepName :: Text
+  , actions  :: [BuildAction]
+  } deriving (Eq, Show, Generic)
+
+instance FromJSON BuildStep
+
+data BuildAction = BuildAction
+  { actionName   :: Text
+  , bashCommand  :: Maybe Text
+  , exitCode     :: Int
+  , actionType   :: Text
+  , actionStatus :: Text
+  , messages     :: [Text]
+  } deriving (Eq, Show)
+
+instance FromJSON BuildAction where
+    parseJSON (Object o) = BuildAction
+      <$> o .: "name"
+      <*> o .: "bash_command"
+      <*> o .: "exit_code"
+      <*> o .: "type"
+      <*> o .: "status"
+      <*> o .: "messages"
+    parseJSON _ = mzero
 
 -------------------------------------------------------------------------------
 -- API client calls for Servant -----------------------------------------------
