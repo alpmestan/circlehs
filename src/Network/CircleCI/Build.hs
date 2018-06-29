@@ -182,6 +182,7 @@ toBuildLifecycle "scheduled"   = return BuildScheduled
 toBuildLifecycle "not_run"     = return BuildNotRun
 toBuildLifecycle "not_running" = return BuildNotRunning
 toBuildLifecycle "finished"    = return BuildFinished
+toBuildLifecycle "running"     = return BuildRunning
 toBuildLifecycle _             = fail "unknown build lifecycle"
 
 -- | Build lifecycle.
