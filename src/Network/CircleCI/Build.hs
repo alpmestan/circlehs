@@ -40,6 +40,7 @@ import           Control.Monad                  ( mzero )
 import           Control.Monad.Reader           ( ask )
 import           Data.Aeson
 import           Data.Aeson.Types
+import           Data.Maybe                     ( fromMaybe )
 import qualified Data.Proxy                     as P
 import           Data.Text                      ( Text )
 import           Data.HashMap.Strict            ( HashMap )
@@ -160,7 +161,7 @@ instance FromJSON BuildInfo where
         <*> (o .: "lifecycle" >>= toBuildLifecycle)
         <*>  o .: "build_num"
         <*>  o .: "vcs_revision"
-        <*> o .: "steps"
+        <*> (fromMaybe [] <$> o .:? "steps")
         <*> o .: "status"
     parseJSON _ = mzero
 
