@@ -202,7 +202,7 @@ data BuildLifecycle = BuildQueued
                     deriving (Eq, Show)
 
 data BuildStep = BuildStep
-  { stepName :: Text
+  { name :: Text
   , actions  :: [BuildAction]
   } deriving (Eq, Show, Generic)
 
