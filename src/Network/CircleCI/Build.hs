@@ -211,7 +211,7 @@ instance FromJSON BuildStep
 data BuildAction = BuildAction
   { actionName   :: Text
   , bashCommand  :: Maybe Text
-  , exitCode     :: Int
+  , exitCode     :: Maybe Int
   , actionType   :: Text
   , actionStatus :: Text
   , messages     :: [Text]
@@ -220,8 +220,8 @@ data BuildAction = BuildAction
 instance FromJSON BuildAction where
     parseJSON (Object o) = BuildAction
       <$> o .: "name"
-      <*> o .: "bash_command"
-      <*> o .: "exit_code"
+      <*> o .:? "bash_command"
+      <*> o .:? "exit_code"
       <*> o .: "type"
       <*> o .: "status"
       <*> o .: "messages"
