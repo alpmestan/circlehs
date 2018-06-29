@@ -224,7 +224,7 @@ instance FromJSON BuildAction where
       <*> o .:? "exit_code"
       <*> o .: "type"
       <*> o .: "status"
-      <*> o .: "messages"
+      <*> (fromMaybe [] <$> o .:? "messages")
     parseJSON _ = mzero
 
 -------------------------------------------------------------------------------
