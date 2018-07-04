@@ -22,6 +22,8 @@ module Network.CircleCI.Build (
     , BuildInfo(..)
     , BuildOutcome(..)
     , BuildLifecycle(..)
+    , BuildStep(..)
+    , BuildAction(..)
     -- ** Triggering
     , TagName
     , Revision
@@ -152,6 +154,7 @@ data BuildInfo = BuildInfo {
     , commit      :: Text
     , steps       :: [BuildStep]
     , status      :: Text
+    , canceled    :: Bool
     } deriving (Eq, Show)
 
 -- How we create BuildInfo from JSON.
@@ -163,6 +166,7 @@ instance FromJSON BuildInfo where
         <*>  o .: "vcs_revision"
         <*> (fromMaybe [] <$> o .:? "steps")
         <*> o .: "status"
+        <*> o .: "canceled"
     parseJSON _ = mzero
 
 toBuildOutcome :: Text -> Parser BuildOutcome
