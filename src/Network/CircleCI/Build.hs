@@ -18,6 +18,7 @@ module Network.CircleCI.Build (
     -- * API calls
       triggerBuild
     , getBuild
+    , getBuildArtifacts
     -- * Types for calls and response
     -- ** Querying
     , BuildInfo(..)
@@ -25,6 +26,7 @@ module Network.CircleCI.Build (
     , BuildLifecycle(..)
     , BuildStep(..)
     , BuildAction(..)
+    , BuildArtifact(..)
     -- ** Triggering
     , TagName
     , Revision
@@ -94,6 +96,16 @@ getBuild project build = do
         build
         (Just token)
 
+getBuildArtifacts
+  :: ProjectPoint -> BuildNumber -> CircleCIResponse [BuildArtifact]
+getBuildArtifacts project build = do
+    AccountAPIToken token <- ask
+    liftClientM $ servantGetBuildArtifacts
+        (userName project)
+        (projectName project)
+        build
+        (Just token)
+
 -------------------------------------------------------------------------------
 -- API types for Servant ------------------------------------------------------
 -------------------------------------------------------------------------------
@@ -102,6 +114,7 @@ getBuild project build = do
 type BuildAPI =
          TriggerBuild
     :<|> GetBuild
+    :<|> GetBuildArtifacts
 
 -- Trigger a build.
 type TriggerBuild =
@@ -145,7 +158,7 @@ type GetBuild =
     :> Capture "build number" BuildNumber
     :> QueryParam "circle-token" Token
     :> Get '[JSON] BuildInfo
-    -- GET: /project/:username/:project/:build_num?circle-token=:tokenh
+    -- GET: /project/:username/:project/:build_num?circle-token=:token
 
 -- | Info about single build.
 data BuildInfo = BuildInfo {
@@ -272,6 +285,28 @@ instance ToJSON BuildAction where
       (maybe [] (\e -> [ "exit_code" .= e ]) exitCode) ++
       (if null messages then [] else [ "messages" .= messages ])
 
+-- Get the artifacts generated (and stored for later retrieval)
+-- by a build.
+type GetBuildArtifacts =
+       "project"
+    :> Capture "username" UserName
+    :> Capture "project" ProjectName
+    :> Capture "build number" BuildNumber
+    :> "artifacts"
+    :> QueryParam "circle-token" Token
+    :> Get '[JSON] [BuildArtifact]
+    -- GET: /project/:username/:project/:build_num/artifacts?circle-token=:token
+
+data BuildArtifact = BuildArtifact
+  { path :: Text
+  , pretty_path :: Text
+  , node_index :: Int
+  , url :: Text
+  } deriving (Eq, Show, Generic)
+
+instance FromJSON BuildArtifact
+instance ToJSON BuildArtifact
+
 -------------------------------------------------------------------------------
 -- API client calls for Servant -----------------------------------------------
 -------------------------------------------------------------------------------
@@ -288,8 +323,15 @@ servantGetBuild :: UserName
                 -> Maybe Token
                 -> ClientM BuildInfo
 
+servantGetBuildArtifacts :: UserName
+                         -> ProjectName
+                         -> BuildNumber
+                         -> Maybe Token
+                         -> ClientM [BuildArtifact]
+
 servantTriggerBuild
-    :<|> servantGetBuild = client buildAPI
+    :<|> servantGetBuild
+    :<|> servantGetBuildArtifacts = client buildAPI
 
 buildAPI :: P.Proxy BuildAPI
 buildAPI = P.Proxy
