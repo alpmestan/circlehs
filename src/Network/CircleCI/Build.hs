@@ -12,6 +12,7 @@ API calls for triggering and querying builds.
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Network.CircleCI.Build (
     -- * API calls
