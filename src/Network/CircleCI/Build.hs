@@ -169,6 +169,17 @@ instance FromJSON BuildInfo where
         <*> o .: "canceled"
     parseJSON _ = mzero
 
+instance ToJSON BuildInfo where
+    toJSON BuildInfo{..} = object $
+      [ "number" .= number
+      , "commit" .= commit
+      , "status" .= status
+      , "canceled" .= canceled
+      , "lifecycle" .= lifecycle
+      ] ++
+      (if null steps then [] else [ "steps" .= steps ]) ++
+      (maybe [] (\o -> [ "outcome" .= o ]) outcome)
+
 toBuildOutcome :: Text -> Parser BuildOutcome
 toBuildOutcome "success"             = return BuildSuccess
 toBuildOutcome "failed"              = return BuildFailed
@@ -177,6 +188,15 @@ toBuildOutcome "no_tests"            = return BuildNoTests
 toBuildOutcome "infrastructure_fail" = return BuildInfrastructureFail
 toBuildOutcome "timedout"            = return BuildTimedOut
 toBuildOutcome _                     = fail "unknown build outcome"
+
+buildOutcomeText :: BuildOutcome -> Text
+buildOutcomeText bo = case bo of
+  BuildSuccess            -> "success"
+  BuildFailed             -> "failed"
+  BuildCanceled           -> "canceled"
+  BuildNoTests            -> "no_tests"
+  BuildInfrastructureFail -> "infrastructure_fail"
+  BuildTimedOut           -> "timedout"
 
 -- | Build outcome.
 data BuildOutcome = BuildSuccess

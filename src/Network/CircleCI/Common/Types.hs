@@ -48,7 +48,7 @@ type BranchName = Text
 
 -- | Number of project's build on CircleCI.
 newtype BuildNumber = BuildNumber Int
-                    deriving (Eq, Show, ToHttpApiData, FromJSON, ToJSON)
+                    deriving (Eq, Show, FromHttpApiData, ToHttpApiData, FromJSON, ToJSON)
 
 -- | User email address.
 type Email = Text
