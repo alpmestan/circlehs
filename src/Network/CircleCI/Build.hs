@@ -176,10 +176,10 @@ instance ToJSON BuildInfo where
       , "commit" .= commit
       , "status" .= status
       , "canceled" .= canceled
-      , "lifecycle" .= lifecycle
+      , "lifecycle" .= buildLifecycleText lifecycle
       ] ++
       (if null steps then [] else [ "steps" .= steps ]) ++
-      (maybe [] (\o -> [ "outcome" .= o ]) outcome)
+      (maybe [] (\o -> [ "outcome" .= buildOutcomeText o ]) outcome)
 
 toBuildOutcome :: Text -> Parser BuildOutcome
 toBuildOutcome "success"             = return BuildSuccess
@@ -217,6 +217,15 @@ toBuildLifecycle "finished"    = return BuildFinished
 toBuildLifecycle "running"     = return BuildRunning
 toBuildLifecycle _             = fail "unknown build lifecycle"
 
+buildLifecycleText :: BuildLifecycle -> Text
+buildLifecycleText bl = case bl of
+  BuildQueued -> "queued"
+  BuildScheduled -> "scheduled"
+  BuildNotRun -> "not_run"
+  BuildNotRunning -> "not_running"
+  BuildFinished -> "finished"
+  BuildRunning -> "running"
+
 -- | Build lifecycle.
 data BuildLifecycle = BuildQueued
                     | BuildScheduled
@@ -232,6 +241,7 @@ data BuildStep = BuildStep
   } deriving (Eq, Show, Generic)
 
 instance FromJSON BuildStep
+instance ToJSON BuildStep
 
 data BuildAction = BuildAction
   { actionName   :: Text
@@ -251,6 +261,16 @@ instance FromJSON BuildAction where
       <*> o .: "status"
       <*> (fromMaybe [] <$> o .:? "messages")
     parseJSON _ = mzero
+
+instance ToJSON BuildAction where
+    toJSON BuildAction{..} = object $
+      [ "name" .= actionName
+      , "type" .= actionType
+      , "status" .= actionStatus
+      ] ++
+      (maybe [] (\c -> [ "bash_command" .= c ]) bashCommand) ++
+      (maybe [] (\e -> [ "exit_code" .= e ]) exitCode) ++
+      (if null messages then [] else [ "messages" .= messages ])
 
 -------------------------------------------------------------------------------
 -- API client calls for Servant -----------------------------------------------
